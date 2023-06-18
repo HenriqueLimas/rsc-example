@@ -1,0 +1,28 @@
+{
+  "name": "rsc-example",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "start": "concurrently \"yarn start:ssr\" \"yarn start:rsc\"",
+    "start:ssr": "nodemon -- --experimental-loader ./node-jsx-loader.js ./server/ssr.js",
+    "start:rsc": "nodemon -- --experimental-loader ./node-jsx-loader.js ./server/rsc.js"
+  },
+  "dependencies": {
+    "@babel/core": "^7.21.8",
+    "@babel/plugin-transform-react-jsx": "^7.21.5",
+    "escape-html": "^1.0.3",
+    "express": "^4.18.2",
+    "nodemon": "^2.0.22",
+    "random-hex-color": "^1.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^8.0.7",
+    "sanitize-filename": "^1.6.3"
+  },
+  "author": "Henrique Limas <henrique.ramos.limas@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.1.0"
+  }
+}
