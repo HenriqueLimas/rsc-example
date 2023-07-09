@@ -31,18 +31,6 @@ async function navigate(pathname) {
   }
 }
 
-function parseJSX(key, value) {
-  if (value === '$RE') {
-    return Symbol.for('react.element')
-  }
-
-  if (typeof value === 'string' && value.startsWith('$$')) {
-    return value.slice(1)
-  }
-
-  return value
-}
-
 window.addEventListener('click', (event) => {
   if (event.target.tagName !== 'A') {
     return

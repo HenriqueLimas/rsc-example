@@ -32,6 +32,7 @@
     "concurrently": "^8.1.0",
     "react-server-dom-webpack": "experimental",
     "swc-loader": "^0.2.3",
+    "terser-webpack-plugin": "^5.3.9",
     "webpack": "^5.88.0",
     "webpack-cli": "^5.1.4"
   }

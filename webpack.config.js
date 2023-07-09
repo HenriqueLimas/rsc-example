@@ -6,6 +6,7 @@ import {
   WebpackRscServerPlugin,
   WebpackRscClientPlugin
 } from '@mfng/webpack-rsc'
+import TerserPlugin from 'terser-webpack-plugin'
 
 const clientReferencesMap = new Map()
 const serverReferencesMap = new Map()
@@ -74,7 +75,17 @@ const clientConfig = {
   },
   plugins: [
     new WebpackRscClientPlugin({clientReferencesMap})
-  ]
+  ],
+  optimization: {
+    minimizer: [new TerserPlugin({
+      terserOptions: {
+        output: {
+          // An internal React regex is being wrongly minified by terser
+          ascii_only: true
+        }
+      }
+    })]
+  }
 }
 
 export default [serverConfig, clientConfig]
