@@ -1,3 +1,4 @@
+import React from 'react'
 import {readdir} from 'fs/promises'
 import {Post} from '../components/post.js'
 

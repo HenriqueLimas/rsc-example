@@ -1,27 +1,39 @@
+import React, {startTransition, use, useState} from "react"
 import { hydrateRoot } from 'react-dom/client'
+import { createFromFetch } from 'react-server-dom-webpack/client.browser'
 
-const initialClientJsx = getInitialClientJsx()
-const root = hydrateRoot(document, initialClientJsx)
-function getInitialClientJsx() {
-  const clientJsx = JSON.parse(window.__INITIAL_CLIENT_JSX_STRING__, parseJSX)
-  return clientJsx
+let updateRoot
+let currentPathname = window.location.pathname
+const initialData = createFromFetch(
+  fetch(currentPathname + '?jsx', {
+    headers: {
+      Accept: 'text/x-component'
+    }
+  })
+)
+
+function Shell({ data }) {
+  const [root, setRoot] = useState(use(data))
+  updateRoot = setRoot
+  return root
 }
 
-let currentPathname = window.location.pathname
+hydrateRoot(document, <Shell data={initialData} />)
 
 const cache = {
-  [currentPathname]: initialClientJsx
+  [currentPathname]: initialData
 }
 
 async function navigate(pathname) {
   currentPathname = pathname
 
-  const response = await fetch(pathname + '?jsx')
-  const jsonString = JSON.parse(await response.text(), parseJSX)
-  cache[pathname] = jsonString
+  const root = await createFromFetch(fetch(pathname + '?jsx'))
+  cache[pathname] = root
 
   if (currentPathname === pathname) {
-    root.render(jsonString)
+    startTransition(() => {
+      updateRoot(root)
+    })
   }
 }
 
@@ -58,7 +70,9 @@ window.addEventListener('click', (event) => {
 
 window.addEventListener('popstate', () => {
   if (cache[window.location.pathname]) {
-    root.render(cache[window.location.pathname])
+    startTransition(() => {
+      updateRoot(cache[window.location.pathname])
+    })
   } else {
     navigate(window.location.pathname)
   }
@@ -69,11 +83,14 @@ window.addEventListener('submit', async(event) => {
 
   const pathname = event.target.getAttribute('action')
   const formData = new FormData(event.target)
-  const response = await fetch(pathname, {
+  const root = await createFromFetch(fetch(pathname, {
+    headers: {
+      Accept: 'text/x-component'
+    },
     body: new URLSearchParams(formData),
     method: 'POST'
+  }))
+  startTransition(() => {
+    updateRoot(root)
   })
-  const jsonString = JSON.parse(await response.text(), parseJSX)
-  cache[currentPathname] = jsonString
-  root.render(jsonString)
 })

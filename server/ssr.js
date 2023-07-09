@@ -1,12 +1,18 @@
-import { renderToString } from 'react-dom/server'
+import React from 'react'
+import path from 'path'
+import { renderToPipeableStream } from 'react-dom/server'
+import { createFromNodeStream } from 'react-server-dom-webpack/client.node'
 import express from 'express'
 import { readFile } from 'fs/promises'
 import db from './db.js'
+import {renderRSCToNodeStream, Router} from './rsc.js'
+import {reactClientManifest, reactSsrManifest} from './manifests.js'
 
 const app = express()
 
+app.use(express.urlencoded({ extended: true }))
 app.get('/client.js', async(req, res) => {
-  const jsFile = await readFile('./client.js', 'utf8')
+  const jsFile = await readFile(path.resolve(__dirname, './client.js'), 'utf8')
   res.writeHead(200, { 'Content-Type': 'application/javascript' })
   res.end(jsFile)
 })
@@ -17,17 +23,22 @@ app.get('/favicon.ico', (req, res) => {
 })
 
 app.post('/posts/comments', async(req, res) => {
-  const postId = req.query.postId
+  try {
+    const postId = req.body.postId
 
-  const newComment = {
-    content: searchParams.get('comment')
+    const newComment = {
+      content: req.body.comment
+    }
+
+    await db.addComment(postId, newComment)
+
+    const postUrl = new URL(`/${postId}?jsx`, `http://${req.headers.host}`)
+
+    await render(postUrl, res)
+  } catch (error) {
+    console.error(error)
+    res.end(500)
   }
-
-  await db.addComment(postId, newComment)
-
-  const postUrl = new URL(`/${postId}?jsx`, `http://${req.headers.host}`)
-
-  await render(postUrl, res)
 })
 
 app.get(`*`, async(req, res) => {
@@ -44,55 +55,33 @@ app.get(`*`, async(req, res) => {
 app.listen(8000)
 
 async function render(url, res) {
-  const response = await fetch(`http://localhost:8001${url.pathname}`)
-  if (!response.ok) {
-    res.statusCode = response.status
-    res.end()
-    return
-  }
+  const rscStream = renderRSCToNodeStream(<Router url={url} />, reactClientManifest)
 
-  const clientJSXString = await response.text()
   if (url.searchParams.has('jsx')) {
-    res.writeHead(response.status, { 'Content-type': 'application/json' })
-    res.end(clientJSXString)
+    res.set('Content-type', 'text/x-component')
+    rscStream.on('data', data => {
+      res.write(data)
+      // res.flush()
+    })
+    rscStream.on('end', () => {
+      res.end()
+    })
   } else {
     sendHTML(
       res,
-      clientJSXString
+      rscStream
     )
   }
 }
 
-function parseJSX(key, value) {
-  if (value === '$RE') {
-    return Symbol.for('react.element')
-  }
+async function sendHTML(res, rscStream) {
+  const ServerRoot = () => createFromNodeStream(rscStream, reactSsrManifest)
 
-  if (typeof value === 'string' && value.startsWith('$$')) {
-    return value.slice(1)
-  }
-
-  return value
-}
-
-async function sendHTML(res, clientJSXString) {
-  const clientJSX = JSON.parse(clientJSXString, parseJSX)
-  let html = renderToString(clientJSX)
-
-  html += `<script>window.__INITIAL_CLIENT_JSX_STRING__ = `
-  html += JSON.stringify(clientJSXString).replace(/</g, "\\u003c")
-  html += `</script>`
-  html += `
-    <script type="importmap">
-      {
-        "imports": {
-          "react": "https://esm.sh/react@canary",
-          "react-dom/client": "https://esm.sh/react-dom@canary/client"
-        }
-      }
-    </script>
-    <script type="module" src="./client.js"></script>
-  `
-  res.writeHead(200, { 'Content-type': 'text/html' })
-  res.end(html)
+  const { pipe } = renderToPipeableStream(<ServerRoot />, {
+    bootstrapScripts: ['/client.js'],
+    onShellReady() {
+      res.writeHead(200, { 'Content-type': 'text/html' })
+      pipe(res)
+    }
+  })
 }
