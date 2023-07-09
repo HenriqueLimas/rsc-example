@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "clean": "rm -rf dist",
-    "start": "nodemon --inspect -- --experimental-loader ./node-jsx-loader.js ./dist/server.cjs",
+    "start": "node --experimental-loader ./node-jsx-loader.js ./dist/server.cjs",
     "prestart": "yarn build",
-    "build": "yarn clean && yarn build:dev",
+    "build": "yarn clean && yarn build:production",
     "build:production": "webpack --mode production",
     "build:dev": "yarn clean && webpack --mode development"
   },

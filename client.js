@@ -1,16 +1,10 @@
 import React, {startTransition, use, useState} from "react"
 import { hydrateRoot } from 'react-dom/client'
-import { createFromFetch } from 'react-server-dom-webpack/client.browser'
+import { createFromFetch, createFromReadableStream } from 'react-server-dom-webpack/client.browser'
 
 let updateRoot
 let currentPathname = window.location.pathname
-const initialData = createFromFetch(
-  fetch(currentPathname + '?jsx', {
-    headers: {
-      Accept: 'text/x-component'
-    }
-  })
-)
+const initialData = createFromReadableStream(window.__initialRscResponseStream__)
 
 function Shell({ data }) {
   const [root, setRoot] = useState(use(data))
