@@ -13,6 +13,19 @@ const serverReferencesMap = new Map()
 const rscServerLoader = createWebpackRscServerLoader({clientReferencesMap})
 const rscSsrLoader = createWebpackRscSsrLoader()
 const rscClientLoader = createWebpackRscClientLoader({serverReferencesMap})
+const stats = {
+  assets: true,
+  builtAt: true,
+  chunks: false,
+  colors: true,
+  groupAssetsByEmitStatus: false,
+  groupAssetsByExtension: true,
+  groupAssetsByInfo: false,
+  groupAssetsByPath: false,
+  hash: false,
+  modules: false,
+  version: false,
+};
 
 const serverConfig = {
   name: 'server',
@@ -24,7 +37,9 @@ const serverConfig = {
   module: {
     rules: [
       {
-        resource: value => /create-rsc-\w+-stream\.jsx?$/.test(value),
+        resource: (value) =>
+            /core\/lib\/server\/rsc\.js$/.test(value) ||
+            /rsc\.js$/.test(value),
         layer: webpackRscLayerName
       },
       {
@@ -54,7 +69,8 @@ const serverConfig = {
   ],
   experiments: {
     layers: true,
-  }
+  },
+  stats
 }
 
 const clientConfig = {
@@ -79,13 +95,17 @@ const clientConfig = {
   optimization: {
     minimizer: [new TerserPlugin({
       terserOptions: {
+        compress: {
+          directives: false
+        },
         output: {
           // An internal React regex is being wrongly minified by terser
           ascii_only: true
         }
       }
     })]
-  }
+  },
+  stats
 }
 
 export default [serverConfig, clientConfig]

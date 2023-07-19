@@ -12,8 +12,8 @@ import {reactClientManifest, reactSsrManifest} from './manifests.js'
 const app = express()
 
 app.use(express.urlencoded({ extended: true }))
-app.get('/client.js', async(req, res) => {
-  const jsFile = await readFile(path.resolve(__dirname, './client.js'), 'utf8')
+app.get('/*.js', async(req, res) => {
+  const jsFile = await readFile(path.resolve(__dirname, `./${req.path}`), 'utf8')
   res.writeHead(200, { 'Content-Type': 'application/javascript' })
   res.end(jsFile)
 })

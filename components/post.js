@@ -2,6 +2,7 @@ import React from 'react'
 import ReactMarkdown from "react-markdown"
 import {readFile} from "fs/promises"
 import db from "../server/db.js"
+import {Popup} from './popup.jsx'
 
 export async function Post({ slug, hideComments }) {
   const [ content, comments ] = await Promise.all([
@@ -37,6 +38,7 @@ export async function Post({ slug, hideComments }) {
           </form>
         </>
       )}
+      <Popup />
     </section>
   )
 }
