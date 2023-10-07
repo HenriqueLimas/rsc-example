@@ -29,7 +29,7 @@ const stats = {
 
 const serverConfig = {
   name: 'server',
-  entry: './server/ssr.js',
+  entry: './server/server.js',
   target: 'node',
   output: {
     filename: 'server.cjs',
@@ -39,7 +39,8 @@ const serverConfig = {
       {
         resource: (value) =>
             /core\/lib\/server\/rsc\.js$/.test(value) ||
-            /rsc\.js$/.test(value),
+            /rsc\.js$/.test(value) ||
+            /handler\.js$/.test(value),
         layer: webpackRscLayerName
       },
       {
